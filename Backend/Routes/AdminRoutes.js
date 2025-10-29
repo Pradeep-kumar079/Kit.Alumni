@@ -15,7 +15,7 @@ const {
   sendMessage,
   getSentMessages,
   createAdmiPost
-} = require("../controllers/adminController");
+} = require("../Controllers/adminController");
 
 const User = require("../Models/UserModel");
 const Post = require("../Models/PostModel");
