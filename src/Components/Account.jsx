@@ -3,6 +3,9 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import "./Account.css";
 
+const BACKEND_URL =
+  process.env.BACKEND_URL || "https://kit-alumni.onrender.com";
+
 const Account = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,12 +24,12 @@ const Account = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const resUser = await axios.get("/api/account", {
+        const resUser = await axios.get(`${BACKEND_URL}/api/account`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (resUser.data.success) setUser(resUser.data.user);
 
-        const resPosts = await axios.get("/api/account/posts/me", {
+        const resPosts = await axios.get(`${BACKEND_URL}/api/account/posts/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (resPosts.data.success) setPosts(resPosts.data.posts);
@@ -63,15 +66,13 @@ const Account = () => {
       const token = localStorage.getItem("token");
       const formData = new FormData();
 
-      // append text fields
       Object.keys(updatedUser).forEach((key) => {
         formData.append(key, updatedUser[key]);
       });
 
-      // append image if changed
       if (selectedImage) formData.append("userimg", selectedImage);
 
-      const res = await axios.put("/api/account/update", formData, {
+      const res = await axios.put(`${BACKEND_URL}/api/account/update`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -92,8 +93,8 @@ const Account = () => {
   const handleLike = async (postId) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await axios.put(`/api/posts/like/${postId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.put(`${BACKEND_URL}/api/posts/like/${postId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) {
         const updated = posts.map((p) =>
@@ -114,11 +115,11 @@ const Account = () => {
   const handleSavePost = async (postId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.put(`/api/posts/update/${postId}`, updatedPost, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.put(`${BACKEND_URL}/api/posts/update/${postId}`, updatedPost, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) {
-        const updated = posts.map((p) => p._id === postId ? res.data.post : p);
+        const updated = posts.map((p) => (p._id === postId ? res.data.post : p));
         setPosts(updated);
         setEditingPostId(null);
       }
@@ -131,8 +132,8 @@ const Account = () => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.delete(`/api/posts/delete/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.delete(`${BACKEND_URL}/api/posts/delete/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) {
         setPosts(posts.filter((p) => p._id !== postId));
@@ -149,15 +150,15 @@ const Account = () => {
     <div className="account-container">
       <Navbar />
       <div className="account-content">
-        {/* Left tabs */}
+        {/* Left Tabs */}
         <div className="left-tabs">
           <img
             src={
               previewImage
                 ? previewImage
                 : user.userimg
-                ? `http://localhost:5000/${user.userimg}`
-                : "http://localhost:5000/uploads/default.jpg"
+                ? `${BACKEND_URL}/${user.userimg}`
+                : `${BACKEND_URL}/uploads/default.jpg`
             }
             alt="Profile"
             className="profile-img"
@@ -185,7 +186,7 @@ const Account = () => {
           </button>
         </div>
 
-        {/* Right content */}
+        {/* Right Content */}
         <div className="right-content">
           {activeTab === "profile" && (
             <>
@@ -243,22 +244,10 @@ const Account = () => {
                       onChange={handleChange}
                     />
 
-                    {/* New image upload field */}
                     <label>Profile Image:</label>
                     <input type="file" accept="image/*" onChange={handleImageChange} />
                     {previewImage && (
-                      <img
-                        src={
-                          previewImage
-                            ? previewImage
-                            : user.userimg
-                            ? `http://localhost:5000/${user.userimg}`
-                            : "http://localhost:5000/uploads/default.jpg"
-                        }
-                        alt="Profile"
-                        className="profile-img"
-                      />
-
+                      <img src={previewImage} alt="Preview" className="profile-img" />
                     )}
                   </form>
                 </>
@@ -266,7 +255,6 @@ const Account = () => {
             </>
           )}
 
-          {/* Posts Tab */}
           {activeTab === "posts" && (
             <>
               <h2>User Posts</h2>
@@ -297,7 +285,10 @@ const Account = () => {
                       <p>{post.description}</p>
                       {post.postimg && (
                         <div className="post-image-container">
-                          <img src={`/uploads/${post.postimg}`} alt="Post" />
+                          <img
+                            src={`${BACKEND_URL}/uploads/${post.postimg}`}
+                            alt="Post"
+                          />
                         </div>
                       )}
                       <div className="post-actions">

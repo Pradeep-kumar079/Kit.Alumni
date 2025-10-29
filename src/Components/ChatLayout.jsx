@@ -3,7 +3,14 @@ import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 import axios from "axios";
 
-const socket = io("http://localhost:5000"); // backend port
+// ✅ Use Render backend URL
+const socket = io("https://kit-alumni.onrender.com", {
+  transports: ["websocket"], // prefer WebSocket, avoid polling
+  secure: true,              // ✅ important for Render HTTPS
+  withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
+});
 
 const ChatLayout = ({ userId }) => {
   const [users, setUsers] = useState([]);
@@ -34,7 +41,9 @@ const ChatLayout = ({ userId }) => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/api/user/all");
+      const res = await axios.get("https://kit-alumni.onrender.com/api/user/all", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       setUsers(res.data.users);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -66,7 +75,10 @@ const ChatLayout = ({ userId }) => {
             className={`user ${selectedUser?._id === u._id ? "active" : ""}`}
             onClick={() => setSelectedUser(u)}
           >
-            <img src={u.userimg ? `/uploads/${u.userimg}` : "/default.png"} alt="" />
+            <img
+              src={u.userimg ? `https://kit-alumni.onrender.com/uploads/${u.userimg}` : "/default.png"}
+              alt={u.username}
+            />
             <span>{u.username}</span>
           </div>
         ))}
@@ -94,6 +106,7 @@ const ChatLayout = ({ userId }) => {
                 placeholder="Type a message..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               />
               <button onClick={sendMessage}>Send</button>
             </div>

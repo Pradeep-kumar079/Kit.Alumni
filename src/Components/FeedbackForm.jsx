@@ -7,18 +7,25 @@ const FeedbackForm = () => {
   const [message, setMessage] = useState("");
   const token = localStorage.getItem("token");
 
+  // Automatically detect whether we're on localhost or deployed
+  const API_BASE =
+    window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "https://kit-alumni.onrender.com";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "/api/user/submit",
+        `${API_BASE}/api/user/submit`,
         { feedback },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessage(res.data.message);
+      setMessage(res.data.message || "✅ Feedback submitted successfully!");
       setFeedback("");
     } catch (err) {
-      setMessage("Error submitting feedback");
+      console.error(err.response?.data || err);
+      setMessage("❌ Error submitting feedback");
     }
   };
 

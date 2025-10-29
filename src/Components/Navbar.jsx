@@ -4,6 +4,7 @@ import axios from "axios";
 import "./Navbar.css";
 import { FaGraduationCap, FaSignOutAlt, FaUser } from "react-icons/fa";
 import { FaMagnifyingGlass } from "react-icons/fa6";
+import { BACKEND_URL } from "../config";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  // 🔍 Search function
   useEffect(() => {
     const fetchResults = async () => {
       if (!query.trim()) {
@@ -23,20 +23,22 @@ const Navbar = () => {
         return;
       }
       try {
-        const res = await axios.get(`/api/search?q=${query}`);
+        const res = await axios.get(`${BACKEND_URL}/api/search?q=${query}`);
         if (res.data.success) {
           const combined = [
-            ...res.data.users.map((u) => ({ ...u, type: "user" })),
-            ...res.data.posts.map((p) => ({ ...p, type: "post" })),
+            ...(res.data.users || []).map((u) => ({ ...u, type: "user" })),
+            ...(res.data.posts || []).map((p) => ({ ...p, type: "post" })),
           ];
           setResults(combined);
+        } else {
+          setResults([]);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Search error:", err);
       }
     };
 
-    const delay = setTimeout(fetchResults, 400); // debounce
+    const delay = setTimeout(fetchResults, 400);
     return () => clearTimeout(delay);
   }, [query]);
 
@@ -50,12 +52,12 @@ const Navbar = () => {
   return (
     <div className="navbar-wrapper">
       <div className="container">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/home")}>
           <h2>Logo</h2>
         </div>
 
         <div className="search">
-          <FaMagnifyingGlass />
+          <FaMagnifyingGlass className="search-icon" />
           <input
             type="text"
             placeholder="Search users or posts..."
@@ -75,7 +77,7 @@ const Navbar = () => {
                       <img
                         src={
                           item.userimg
-                            ? `/uploads/${item.userimg}`
+                            ? `${BACKEND_URL}/uploads/${item.userimg}`
                             : "/assets/default-profile.png"
                         }
                         alt={item.username}
@@ -93,7 +95,7 @@ const Navbar = () => {
                       <img
                         src={
                           item.postimg
-                            ? `/uploads/${item.postimg}`
+                            ? `${BACKEND_URL}/uploads/${item.postimg}`
                             : "/assets/default-post.png"
                         }
                         alt={item.title}
@@ -112,13 +114,15 @@ const Navbar = () => {
         </div>
 
         <div className="buttons">
-          <button><Link to={'/home'}>Home</Link></button>
-          <button><Link to={'/about'}>About</Link></button>
-          <button><Link to={'/post'}>Post</Link></button>
-          <button><Link to={'/students'}><FaUser /> Students</Link></button>
-          <button><Link to={'/alumni'}><FaGraduationCap /> Alumni</Link></button>
-          <button><Link to={'/account'}>Account</Link></button>
-          <button className="logout" onClick={Logout}><FaSignOutAlt /> Log out</button>
+          <Link to="/home"><button>Home</button></Link>
+          <Link to="/about"><button>About</button></Link>
+          <Link to="/post"><button>Post</button></Link>
+          <Link to="/students"><button><FaUser /> Students</button></Link>
+          <Link to="/alumni"><button><FaGraduationCap /> Alumni</button></Link>
+          <Link to="/account"><button>Account</button></Link>
+          <button className="logout" onClick={Logout}>
+            <FaSignOutAlt /> Log out
+          </button>
         </div>
       </div>
     </div>

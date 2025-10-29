@@ -6,7 +6,9 @@ import "./Gallery.css";
 const Gallary = () => {
   const [gallery, setGallery] = useState([]);
   const navigate = useNavigate();
-  const base_url = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
+  // ✅ Use your deployed backend URL
+  const base_url = "https://kit-alumni.onrender.com";
 
   const fetchGallery = async () => {
     try {
@@ -41,7 +43,7 @@ const Gallary = () => {
             <div
               key={item._id}
               className="gallery-card"
-              onClick={() => navigate(`/gallery/${item._id}`)} // 👈 navigate to single view
+              onClick={() => navigate(`/gallery/${item._id}`)} // Navigate to single item view
               style={{ cursor: "pointer" }}
             >
               {item.image && (

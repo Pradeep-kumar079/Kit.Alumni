@@ -10,14 +10,14 @@ const FindStudent = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const navigate = useNavigate();
 
-  const DEFAULT_IMG = "/Assets/travel-back.jpg"; // Default image
+  const DEFAULT_IMG = "/Assets/travel-back.jpg"; // ✅ Make sure this image exists in public/Assets
 
   const fetchStudents = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const res = await axios.get(`/api/student/all-students`, {
+      const res = await axios.get("/api/student/all-students", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -25,13 +25,14 @@ const FindStudent = () => {
         const batch = res.data.batches.find(
           (b) => b.admissionyear.toString() === admissionyear
         );
-        if (batch) setStudents(batch.students);
+        if (batch) setStudents(batch.students || []);
 
+        // Decode token to get current user ID
         const payload = JSON.parse(atob(token.split(".")[1]));
         setCurrentUserId(payload.id);
       }
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Error fetching students:", err.response?.data || err);
     } finally {
       setLoading(false);
     }
@@ -45,14 +46,14 @@ const FindStudent = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `/api/student/send-request`,
+        "/api/student/send-request",
         { email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("Request sent!");
+      alert("✅ Request sent!");
       fetchStudents();
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Request error:", err.response?.data || err);
       alert("Failed to send request.");
     }
   };
@@ -61,25 +62,25 @@ const FindStudent = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `/api/student/disconnect`,
+        "/api/student/disconnect",
         { userId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("Disconnected successfully!");
+      alert("🔌 Disconnected successfully!");
       fetchStudents();
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Disconnect error:", err.response?.data || err);
       alert("Failed to disconnect.");
     }
   };
 
-  const goToProfile = (userId) => {
-    navigate(`/profile/${userId}`); // redirect to profile page
-  };
+  const goToProfile = (userId) => navigate(`/profile/${userId}`);
 
-  if (loading) return <div>Loading...</div>;
-  if (!students.length) return <div>No students found for {admissionyear}</div>;
+  if (loading) return <div className="loading">Loading...</div>;
+  if (!students.length)
+    return <div className="no-batch">No students found for {admissionyear}</div>;
 
+  // ✅ Group by branch
   const groupedByBranch = students.reduce((acc, s) => {
     if (!acc[s.branch]) acc[s.branch] = [];
     acc[s.branch].push(s);
@@ -89,6 +90,7 @@ const FindStudent = () => {
   return (
     <div className="batch-container">
       <h2>Students in {admissionyear}</h2>
+
       {Object.entries(groupedByBranch).map(([branch, list]) => (
         <div key={branch} className="branch-group">
           <h3>{branch}</h3>
@@ -115,7 +117,13 @@ const FindStudent = () => {
                         alt={student.username}
                         className="profile-img"
                         onClick={() => goToProfile(student._id)}
-                        style={{ cursor: "pointer", height:"50px",width:"50px" }}
+                        style={{
+                          cursor: "pointer",
+                          height: "50px",
+                          width: "50px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
                       />
                     </td>
                     <td
@@ -146,7 +154,7 @@ const FindStudent = () => {
                             style={{
                               backgroundColor: "#dc3545",
                               color: "white",
-                              marginLeft: "0px",
+                              marginLeft: "8px",
                             }}
                           >
                             Disconnect

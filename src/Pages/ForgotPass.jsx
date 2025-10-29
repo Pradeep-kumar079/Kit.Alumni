@@ -10,13 +10,18 @@ const ForgotPass = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMsg("");
+
     try {
+      // ✅ Use full backend URL for deployment
       const res = await axios.post(
-        `${process.env.BACKEND_URL}/api/auth/forgot-password`,
+        `https://kit-alumni.onrender.com/api/auth/forgot-password`,
         { email }
       );
-      setMsg(res.data.message);
+
+      setMsg(res.data.message || "Reset link sent to your email!");
     } catch (err) {
+      console.error("Forgot password error:", err);
       setMsg(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);

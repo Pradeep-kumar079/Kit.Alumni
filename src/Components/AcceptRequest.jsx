@@ -6,10 +6,16 @@ const AcceptRequest = ({ refreshStudents }) => {
   const { token } = useParams();
   const navigate = useNavigate();
 
+  // ✅ Backend auto-detect (local vs deployed)
+  const backend =
+    window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "https://kit-alumni.onrender.com";
+
   useEffect(() => {
     const acceptRequest = async () => {
       try {
-        await axios.get(`/api/student/accept-request/${token}`);
+        await axios.get(`${backend}/api/student/accept-request/${token}`);
         alert("✅ Connection accepted!");
         if (refreshStudents) refreshStudents(); // update batch list in parent
         navigate("/students"); // redirect back to batches
@@ -21,7 +27,7 @@ const AcceptRequest = ({ refreshStudents }) => {
     };
 
     acceptRequest();
-  }, [token, refreshStudents, navigate]);
+  }, [token, refreshStudents, navigate, backend]);
 
   return <div>Processing request...</div>;
 };

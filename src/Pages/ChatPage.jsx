@@ -9,12 +9,19 @@ const ChatPage = () => {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("/api/account", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await axios.get(
+        "https://kit-alumni.onrender.com/api/account",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       setUser(res.data.user);
     } catch (err) {
-      console.error("Error fetching current user:", err);
+      console.error("❌ Error fetching current user:", err);
     }
   };
 

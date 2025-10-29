@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import "./UserDetails.css";
 
-const socket = io("http://localhost:5000"); // ✅ your backend URL
+// ✅ Connect socket to backend
+const socket = io("https://kit-alumni.onrender.com");
 
 const UserDetails = () => {
   const [user, setUser] = useState(null);
@@ -21,21 +22,26 @@ const UserDetails = () => {
           return;
         }
 
-        const userRes = await axios.get("/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // ✅ Fetch user details
+        const userRes = await axios.get(
+          "https://kit-alumni.onrender.com/api/user",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         if (userRes.data.success) {
           setUser(userRes.data.user);
 
+          // ✅ Fetch connections
           const connRes = await axios.get(
-            `/api/user/connections/${userRes.data.user._id}`,
+            `https://kit-alumni.onrender.com/api/user/connections/${userRes.data.user._id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
           if (connRes.data.success) setConnections(connRes.data.connections);
 
-          // ✅ Emit socket event for online user
+          // ✅ Mark user as online
           socket.emit("userOnline", userRes.data.user._id);
         }
       } catch (err) {
@@ -47,7 +53,7 @@ const UserDetails = () => {
 
     fetchUserAndConnections();
 
-    // ✅ Listen for real-time status changes
+    // ✅ Listen for real-time connection status updates
     socket.on("userStatusUpdate", ({ userId, isOnline }) => {
       setConnections((prev) =>
         prev.map((conn) =>
@@ -61,6 +67,7 @@ const UserDetails = () => {
     };
   }, []);
 
+  // ✅ Navigate inside frontend (not backend)
   const handleChat = (id) => {
     navigate(`/chat/${id}`);
   };
@@ -73,7 +80,11 @@ const UserDetails = () => {
       {/* ✅ User Card */}
       <div className="user-card">
         <img
-          src={user.userimg ? `/uploads/${user.userimg}` : "/default-avatar.png"}
+          src={
+            user.userimg
+              ? `https://kit-alumni.onrender.com/uploads/${user.userimg}`
+              : "/default-avatar.png"
+          }
           alt="User"
           className="user-img"
         />
@@ -98,7 +109,7 @@ const UserDetails = () => {
                   <img
                     src={
                       conn.userimg
-                        ? `/uploads/${conn.userimg}`
+                        ? `https://kit-alumni.onrender.com/uploads/${conn.userimg}`
                         : "/default-avatar.png"
                     }
                     alt={conn.username}

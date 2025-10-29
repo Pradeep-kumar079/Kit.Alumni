@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { BACKEND_URL } from "../config"; // ✅ Import config
 import "./Profile.css";
 
 const Profile = () => {
-  const { userId } = useParams(); // from route /profile/:userId
+  const { userId } = useParams();
   const [user, setUser] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,11 +19,10 @@ const Profile = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        // Decode token to get current user ID
         const payload = JSON.parse(atob(token.split(".")[1]));
         setCurrentUserId(payload.id);
 
-        const res = await axios.get(`/api/user/${userId}`, {
+        const res = await axios.get(`${BACKEND_URL}/api/user/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -30,12 +30,11 @@ const Profile = () => {
           setUser(res.data.user);
           setUserPosts(res.data.posts);
 
-          // Determine connection status
           const isConnected = res.data.user.connections?.includes(payload.id);
           setRequestStatus(isConnected ? "Connected" : "Not connected");
         }
       } catch (err) {
-        console.error(err.response?.data || err);
+        console.error("❌ Profile Fetch Error:", err.response?.data || err);
       } finally {
         setLoading(false);
       }
@@ -48,14 +47,14 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "/api/alumni/send-request",
+        `${BACKEND_URL}/api/alumni/send-request`,
         { email: user.email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("Request sent!");
+      alert("✅ Request sent!");
       setRequestStatus("Request Sent");
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Connect Error:", err.response?.data || err);
       alert("Failed to send request.");
     }
   };
@@ -64,16 +63,22 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "/api/alumni/disconnect",
+        `${BACKEND_URL}/api/alumni/disconnect`,
         { userId: user._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Disconnected successfully!");
       setRequestStatus("Not connected");
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Disconnect Error:", err.response?.data || err);
       alert("Failed to disconnect.");
     }
+  };
+
+  const renderImage = (path) => {
+    if (!path) return "/assets/default-profile.png";
+    if (path.startsWith("http")) return path;
+    return `${BACKEND_URL}/uploads/${path}`;
   };
 
   if (loading) return <div>Loading profile...</div>;
@@ -83,15 +88,15 @@ const Profile = () => {
     <div className="profile-container">
       <div className="profile-header">
         <img
-          src={user.userimg ? `/uploads/${user.userimg}` : "/assets/default-profile.png"}
+          src={renderImage(user.userimg)}
           alt={user.username}
           className="profile-img"
         />
         <div className="profile-info">
           <h2>{user.username}</h2>
           <p>{user.email}</p>
-          <p>Batch : {user.admissionyear}</p>
-         <p>Connections: {user.connections?.length || 0}</p>
+          <p>Batch: {user.admissionyear}</p>
+          <p>Connections: {user.connections?.length || 0}</p>
           <p>Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
 
           <div className="profile-actions" style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
@@ -103,9 +108,7 @@ const Profile = () => {
               <button disabled>Request Sent</button>
             ) : requestStatus === "Connected" ? (
               <>
-               {requestStatus === "Connected" && (
-                  <button onClick={() => navigate(`/chat/${user._id}`)}>Message</button>
-                )}
+                <button onClick={() => navigate(`/chat/${user._id}`)}>Message</button>
                 <button
                   onClick={handleDisconnect}
                   style={{ backgroundColor: "#dc3545", color: "#fff" }}
@@ -127,7 +130,7 @@ const Profile = () => {
               <p>{post.description}</p>
               {post.postimg && (
                 <img
-                  src={`/uploads/${post.postimg}`}
+                  src={renderImage(post.postimg)}
                   alt="Post"
                   className="profile-post-img"
                 />

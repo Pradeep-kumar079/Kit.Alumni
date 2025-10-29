@@ -7,7 +7,9 @@ const SingleGallery = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [galleryItem, setGalleryItem] = useState(null);
-  const base_url = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
+  // Deployed backend URL
+  const base_url = "https://kit-alumni.onrender.com";
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -23,7 +25,7 @@ const SingleGallery = () => {
 
   const renderImg = (img) => {
     if (!img) return "";
-    if (img.startsWith("http") || img.startsWith("https")) return img;
+    if (img.startsWith("http")) return img;
     if (img.startsWith("/uploads")) return `${base_url}${img}`;
     return `${base_url}/uploads/${img}`;
   };

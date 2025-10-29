@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar";
 import axios from "axios";
+import { BACKEND_URL } from "../config";
 import "./Post.css";
 
 const Post = () => {
@@ -29,23 +30,19 @@ const Post = () => {
     if (formData.postimg) data.append("postimg", formData.postimg);
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/user/posts",
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await axios.post(`${BACKEND_URL}/api/user/posts`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       if (response.status === 201) {
         alert("✅ Post created successfully!");
         setFormData({ title: "", description: "", postimg: null, tags: "" });
       }
     } catch (err) {
-      console.error(err.response?.data || err.message);
+      console.error("❌ Error creating post:", err.response?.data || err.message);
       alert("⚠️ Error creating post. Check console for details.");
     }
   };

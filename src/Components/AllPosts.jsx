@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./AllPosts.css";
 
+const BACKEND_URL = "https://kit-alumni.onrender.com";
+
 const AllPosts = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +12,7 @@ const AllPosts = () => {
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get("/api/user/allposts");
+      const res = await axios.get(`${BACKEND_URL}/api/user/allposts`);
       if (res.data.success) {
         setPosts(res.data.posts);
       }
@@ -28,20 +30,17 @@ const AllPosts = () => {
   if (loading) return <div>Loading posts...</div>;
   if (!posts.length) return <div>No posts available</div>;
 
-  // Navigate to single post
   const handlePostClick = (postId) => {
     navigate(`/post/${postId}`);
   };
 
-  // Navigate to user profile
   const handleProfileClick = (userId) => {
     navigate(`/profile/${userId}`);
   };
 
-  // Like functionality
   const handleLike = async (postId) => {
     try {
-      const res = await axios.post(`/api/user/like/${postId}`);
+      const res = await axios.post(`${BACKEND_URL}/api/user/like/${postId}`);
       if (res.data.success) {
         setPosts((prevPosts) =>
           prevPosts.map((post) =>
@@ -54,11 +53,12 @@ const AllPosts = () => {
     }
   };
 
-  // Comment functionality
   const handleComment = async (postId, commentText) => {
     if (!commentText) return;
     try {
-      const res = await axios.post(`/api/user/comment/${postId}`, { comment: commentText });
+      const res = await axios.post(`${BACKEND_URL}/api/user/comment/${postId}`, {
+        comment: commentText,
+      });
       if (res.data.success) {
         setPosts((prevPosts) =>
           prevPosts.map((post) =>
@@ -71,7 +71,6 @@ const AllPosts = () => {
     }
   };
 
-  // Share functionality
   const handleShare = (postId) => {
     const shareUrl = `${window.location.origin}/post/${postId}`;
     navigator.clipboard.writeText(shareUrl);
@@ -84,7 +83,6 @@ const AllPosts = () => {
         {posts.map((post) => (
           <div key={post._id} className="post-card">
             {/* Post Header */}
-            {/* Post Header */}
             <div className="post-header">
               <div
                 className="userprof"
@@ -94,7 +92,7 @@ const AllPosts = () => {
                 <img
                   src={
                     post.user.userimg
-                      ? `/uploads/${post.user.userimg}`
+                      ? `${BACKEND_URL}/uploads/${post.user.userimg}`
                       : "/assets/default-profile.png"
                   }
                   alt={post.user.username}
@@ -106,24 +104,10 @@ const AllPosts = () => {
                 onClick={() => handleProfileClick(post.user._id)}
                 style={{ cursor: "pointer" }}
               >
-               <h4 className="post-username">
-                  {post.user.username}
-                  {/* <span className="user-role">
-                    {" "}
-                    ({post.user.role === "admin"
-                      ? "Admin"
-                      : post.user.role === "alumni"
-                      ? "Alumni"
-                      : post.user.role === "student"
-                      ? "Student"
-                      : "User"})
-                  </span> */}
-                </h4>
-
+                <h4 className="post-username">{post.user.username}</h4>
                 <small>{new Date(post.createdAt).toLocaleString()}</small>
               </div>
             </div>
-
 
             {/* Post Content */}
             <div
@@ -132,16 +116,16 @@ const AllPosts = () => {
               style={{ cursor: "pointer" }}
             >
               {post.title && <h3>{post.title}</h3>}
-             
+
               {post.postimg && (
                 <img
-                  src={`http://localhost:5000/uploads/${post.postimg}`}
+                  src={`${BACKEND_URL}/uploads/${post.postimg}`}
                   alt="Post"
                   className="post-img"
                 />
               )}
 
-               {post.description && <p>{post.description}</p>}
+              {post.description && <p>{post.description}</p>}
             </div>
 
             {/* Post Details */}
@@ -169,7 +153,7 @@ const AllPosts = () => {
                   handleComment(post._id, commentText);
                 }}
               >
-                 Comment
+                Comment
               </button>
               <button onClick={() => handleShare(post._id)}>🔗 Share</button>
             </div>

@@ -3,7 +3,17 @@ import { io } from "socket.io-client";
 import axios from "axios";
 import "./Chat.css";
 
-const socket = io("http://localhost:5000");
+// ✅ Auto-detect backend (Render or local)
+const BACKEND_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://kit-alumni.onrender.com";
+
+// ✅ Initialize socket connection
+const socket = io(BACKEND_URL, {
+  transports: ["websocket", "polling"], // allow fallback
+  reconnection: true,
+});
 
 const Chat = ({ currentUserId, otherUserId }) => {
   const [messages, setMessages] = useState([]);
@@ -21,14 +31,14 @@ const Chat = ({ currentUserId, otherUserId }) => {
         const token = localStorage.getItem("token");
 
         // ✅ Fetch receiver info
-        const receiverRes = await axios.get(`/api/user/${otherUserId}`, {
+        const receiverRes = await axios.get(`${BACKEND_URL}/api/user/${otherUserId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (receiverRes.data.success) setReceiver(receiverRes.data.user);
 
         // ✅ Fetch chat messages
         const chatRes = await axios.get(
-          `/api/chat/${currentUserId}/${otherUserId}`,
+          `${BACKEND_URL}/api/chat/${currentUserId}/${otherUserId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (chatRes.data.success) setMessages(chatRes.data.chats);
@@ -39,7 +49,7 @@ const Chat = ({ currentUserId, otherUserId }) => {
 
     fetchReceiverAndMessages();
 
-    // ✅ Handle socket events
+    // ✅ Socket listeners
     socket.on("receive-message", (data) => {
       setMessages((prev) => [...prev, data.chat]);
     });
@@ -52,16 +62,15 @@ const Chat = ({ currentUserId, otherUserId }) => {
       setMessages((prev) => prev.filter((m) => m._id !== chatId));
     });
 
-    // ✅ Online/offline status tracking
-    socket.on("user-status", ({ userId, online }) => {
-      if (userId === otherUserId) setIsOnline(online);
+    socket.on("userStatusUpdate", ({ userId, isOnline }) => {
+      if (userId === otherUserId) setIsOnline(isOnline);
     });
 
     return () => {
       socket.off("receive-message");
       socket.off("message-edited");
       socket.off("message-deleted");
-      socket.off("user-status");
+      socket.off("userStatusUpdate");
     };
   }, [currentUserId, otherUserId]);
 
@@ -81,7 +90,7 @@ const Chat = ({ currentUserId, otherUserId }) => {
     ]);
 
     try {
-      const res = await axios.post("/api/chat/send", msgData, {
+      const res = await axios.post(`${BACKEND_URL}/api/chat/send`, msgData, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setMessages((prev) =>
@@ -104,7 +113,7 @@ const Chat = ({ currentUserId, otherUserId }) => {
   const submitEdit = async (chatId) => {
     try {
       await axios.put(
-        `/api/chat/edit/${chatId}`,
+        `${BACKEND_URL}/api/chat/edit/${chatId}`,
         { message: editingText, userId: currentUserId },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -120,9 +129,10 @@ const Chat = ({ currentUserId, otherUserId }) => {
   const deleteMessage = async (chatId) => {
     if (!chatId) return alert("This message isn't saved yet!");
     try {
-      await axios.delete(`/api/chat/delete/${chatId}/${currentUserId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      await axios.delete(
+        `${BACKEND_URL}/api/chat/delete/${chatId}/${currentUserId}`,
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
       setMessages((prev) => prev.filter((m) => m._id !== chatId));
     } catch (err) {
       console.error("Delete error:", err);
@@ -132,73 +142,79 @@ const Chat = ({ currentUserId, otherUserId }) => {
   return (
     <div className="whole-chat">
       <div className="chat-container">
-      {/* ===== HEADER ===== */}
-      <div className="chat-header">
-        {receiver ? (
-          <>
-            <img
-              src={receiver.userimg || "/default.jpg"}
-              alt={receiver.username}
-              className="chat-header-img"
-            />
-            <div className="chat-header-info">
-              <h3>{receiver.username}</h3>
-              <p className={isOnline ? "status-online" : "status-offline"}>
-                {isOnline ? "Online" : "Offline"}
-              </p>
-            </div>
-          </>
-        ) : (
-          <p>Loading user...</p>
-        )}
-      </div>
+        {/* ===== HEADER ===== */}
+        <div className="chat-header">
+          {receiver ? (
+            <>
+              <img
+                src={
+                  receiver.userimg
+                    ? `${BACKEND_URL}/${receiver.userimg}`
+                    : "/default.jpg"
+                }
+                alt={receiver.username}
+                className="chat-header-img"
+              />
+              <div className="chat-header-info">
+                <h3>{receiver.username}</h3>
+                <p className={isOnline ? "status-online" : "status-offline"}>
+                  {isOnline ? "Online" : "Offline"}
+                </p>
+              </div>
+            </>
+          ) : (
+            <p>Loading user...</p>
+          )}
+        </div>
 
-      {/* ===== MESSAGES ===== */}
-      <div className="chat-messages">
-        {messages.map((msg, index) => {
-          const isMe = msg.sender === currentUserId;
-          return (
-            <div
-              key={msg._id || `temp-${index}`}
-              className={`chat-message ${isMe ? "me" : "them"}`}
-            >
-              {editingId === msg._id ? (
-                <>
-                  <input
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
-                  />
-                  <button onClick={() => submitEdit(msg._id)}>Save</button>
-                  <button onClick={() => setEditingId(null)}>Cancel</button>
-                </>
-              ) : (
-                <>
-                  <span>{msg.message}</span>
-                  {isMe && msg._id && (
-                    <div className="chat-actions">
-                      <button onClick={() => startEdit(msg)}>Edit</button>
-                      <button onClick={() => deleteMessage(msg._id)}>Delete</button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
+        {/* ===== MESSAGES ===== */}
+        <div className="chat-messages">
+          {messages.map((msg, index) => {
+            const isMe = msg.sender === currentUserId;
+            return (
+              <div
+                key={msg._id || `temp-${index}`}
+                className={`chat-message ${isMe ? "me" : "them"}`}
+              >
+                {editingId === msg._id ? (
+                  <>
+                    <input
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                    />
+                    <button onClick={() => submitEdit(msg._id)}>Save</button>
+                    <button onClick={() => setEditingId(null)}>Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <span>{msg.message}</span>
+                    {isMe && msg._id && (
+                      <div className="chat-actions">
+                        <button onClick={() => startEdit(msg)}>Edit</button>
+                        <button onClick={() => deleteMessage(msg._id)}>
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-      {/* ===== INPUT ===== */}
-      <div className="chat-input">
-        <input
-          type="text"
-          placeholder="Type a message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-        />
-        <button onClick={sendMessage}>➤</button>
+        {/* ===== INPUT ===== */}
+        <div className="chat-input">
+          <input
+            type="text"
+            placeholder="Type a message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          />
+          <button onClick={sendMessage}>➤</button>
+        </div>
       </div>
-    </div>
     </div>
   );
 };

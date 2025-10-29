@@ -10,6 +10,9 @@ const SinglePost = () => {
   const [comments, setComments] = useState([]);
   const [user, setUser] = useState(null);
 
+  // 🌐 Backend base URL (Render deployment)
+  const base_url = "https://kit-alumni.onrender.com";
+
   // ✅ Set authorization header if logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -22,13 +25,13 @@ const SinglePost = () => {
   // ✅ Fetch post + comments
   const fetchPost = async () => {
     try {
-      const res = await axios.get(`/api/user/post/${id}`);
+      const res = await axios.get(`${base_url}/api/user/post/${id}`);
       if (res.data.success) {
         setPost(res.data.post);
         setComments(res.data.post.comments || []);
       }
     } catch (err) {
-      console.error(err);
+      console.error("❌ Fetch Post Error:", err);
     }
   };
 
@@ -47,7 +50,7 @@ const SinglePost = () => {
     if (!comment.trim()) return;
 
     try {
-      const res = await axios.post(`/api/user/comment/${id}`, { comment });
+      const res = await axios.post(`${base_url}/api/user/comment/${id}`, { comment });
       if (res.data.success) {
         setComments(res.data.updatedComments);
         setComment("");
@@ -55,12 +58,20 @@ const SinglePost = () => {
         alert(res.data.message || "Failed to post comment");
       }
     } catch (err) {
-      console.error(err);
+      console.error("❌ Comment Error:", err);
       alert(err.response?.data?.message || "Error posting comment");
     }
   };
 
   if (!post) return <div>Loading post...</div>;
+
+  // ✅ Render uploaded image properly
+  const renderImage = (img) => {
+    if (!img) return "";
+    if (img.startsWith("http")) return img;
+    if (img.startsWith("/uploads")) return `${base_url}${img}`;
+    return `${base_url}/uploads/${img}`;
+  };
 
   return (
     <div className="single-post-container">
@@ -70,7 +81,7 @@ const SinglePost = () => {
 
         {post.postimg && (
           <img
-            src={`http://localhost:5000/uploads/${post.postimg}`}
+            src={renderImage(post.postimg)}
             alt="Post"
             className="post-image"
           />

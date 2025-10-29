@@ -10,14 +10,22 @@ const FindAlumni = () => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
   const navigate = useNavigate();
-  const defaultImg = `${process.env.FRONTEND_URL}/uploads/degault.jpg`;
+
+  // ✅ Automatically detect API base (local or Render)
+  const API_BASE =
+    window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "https://kit-alumni.onrender.com";
+
+  // ✅ Fallback for missing profile images
+  const defaultImg = "/assets/default-profile.png";
 
   const fetchAlumni = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const res = await axios.get("/api/alumni/all-alumni", {
+      const res = await axios.get(`${API_BASE}/api/alumni/all-alumni`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -25,14 +33,15 @@ const FindAlumni = () => {
         const batch = res.data.batches.find(
           (b) => b.admissionyear.toString() === admissionyear
         );
-        if (batch) setAlumniList(batch.alumni);
+        if (batch) setAlumniList(batch.alumni || []);
+        else setAlumniList([]);
 
-        // Decode token to get current user id
+        // ✅ Decode token to get current user id
         const payload = JSON.parse(atob(token.split(".")[1]));
         setCurrentUserId(payload.id);
       }
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Fetch alumni error:", err.response?.data || err);
     } finally {
       setLoading(false);
     }
@@ -46,14 +55,14 @@ const FindAlumni = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "/api/alumni/send-request",
+        `${API_BASE}/api/alumni/send-request`,
         { email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("Request sent!");
+      alert("✅ Request sent!");
       fetchAlumni();
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Request error:", err.response?.data || err);
       alert("Failed to send request.");
     }
   };
@@ -62,14 +71,14 @@ const FindAlumni = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "/api/alumni/disconnect",
+        `${API_BASE}/api/alumni/disconnect`,
         { userId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("Disconnected successfully!");
+      alert("❎ Disconnected successfully!");
       fetchAlumni();
     } catch (err) {
-      console.error(err.response?.data || err);
+      console.error("❌ Disconnect error:", err.response?.data || err);
       alert("Failed to disconnect.");
     }
   };
@@ -78,7 +87,7 @@ const FindAlumni = () => {
   if (!alumniList.length)
     return <div className="no-batch">No alumni found for {admissionyear}</div>;
 
-  // Group alumni by branch
+  // ✅ Group alumni by branch
   const groupedByBranch = alumniList.reduce((acc, a) => {
     if (!acc[a.branch]) acc[a.branch] = [];
     acc[a.branch].push(a);
@@ -112,7 +121,11 @@ const FindAlumni = () => {
                   <tr key={alumni._id}>
                     <td>
                       <img
-                        src={alumni.userimg || defaultImg}
+                        src={
+                          alumni.userimg
+                            ? `${API_BASE}/uploads/${alumni.userimg}`
+                            : defaultImg
+                        }
                         alt={alumni.username}
                         className="profile-img"
                         style={{ cursor: "pointer" }}

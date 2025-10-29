@@ -9,6 +9,9 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // 🌐 Backend URL for Render deployment
+  const base_url = "https://kit-alumni.onrender.com";
+
   useEffect(() => {
     const fetchStudentBatches = async () => {
       try {
@@ -18,30 +21,32 @@ const Students = () => {
           return;
         }
 
-        const res = await axios.get("/api/student/all-students", {
+        const res = await axios.get(`${base_url}/api/student/all-students`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         console.log("📦 API Response:", res.data);
 
         if (res.data.success) {
-          // Check if backend sends 'batches'
           if (res.data.batches && res.data.batches.length > 0) {
+            // ✅ Use batch array directly from backend
             setBatches(res.data.batches);
           } else if (res.data.students && res.data.students.length > 0) {
-            // Fallback: manually group students if no 'batches' field
+            // ✅ Fallback: group manually if only students array exists
             const grouped = {};
             res.data.students.forEach((s) => {
               if (!grouped[s.admissionyear]) grouped[s.admissionyear] = [];
               grouped[s.admissionyear].push(s);
             });
+
             const batchList = Object.keys(grouped).map((year) => ({
               admissionyear: year,
               students: grouped[year],
             }));
+
             setBatches(batchList);
           } else {
-            console.warn("⚠️ No batch data found in response");
+            console.warn("⚠️ No batch or student data found in response");
             setBatches([]);
           }
         } else {

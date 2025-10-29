@@ -1,22 +1,31 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ForgotPass.css";
 
 const ResetPass = () => {
   const { token } = useParams();
+  const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Use full backend URL
       const res = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/api/auth/reset-password/${token}`,
+        `https://kit-alumni.onrender.com/api/auth/reset-password/${token}`,
         { password }
       );
-      setMsg(res.data.message);
+
+      setMsg(res.data.message || "Password reset successful!");
+      
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (err) {
+      console.error(err);
       setMsg(err.response?.data?.message || "Error resetting password");
     }
   };

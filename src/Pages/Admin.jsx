@@ -36,7 +36,12 @@ const Admin = () => {
   const [editFile, setEditFile] = useState(null);
 
   // ✅ unified backend URL (works for local + production)
-  const backend = process.env.BACKEND_URL || "http://localhost:5000";
+  // ✅ Automatically detect whether running locally or on Render
+const backend =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://kit-alumni.onrender.com";
+
 
   // fetch data for currently selected tab
   const fetchData = async (tab) => {
