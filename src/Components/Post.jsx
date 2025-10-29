@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar";
 import axios from "axios";
-import { BACKEND_URL } from "../config";
 import "./Post.css";
 
 const Post = () => {
+  const BACKEND_URL = "https://kit-alumni.onrender.com";
   const [formData, setFormData] = useState({
     title: "",
     description: "",

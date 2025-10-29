@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BACKEND_URL } from "../config"; // ✅ Import config
 import "./Profile.css";
 
 const Profile = () => {
+  const base_url = "https://kit-alumni.onrender.com";
   const { userId } = useParams();
   const [user, setUser] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
@@ -22,7 +22,7 @@ const Profile = () => {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setCurrentUserId(payload.id);
 
-        const res = await axios.get(`${BACKEND_URL}/api/user/${userId}`, {
+        const res = await axios.get(`${base_url}/api/user/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -47,7 +47,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `${BACKEND_URL}/api/alumni/send-request`,
+        `${base_url}/api/alumni/send-request`,
         { email: user.email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -63,7 +63,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `${BACKEND_URL}/api/alumni/disconnect`,
+        `${base_url}/api/alumni/disconnect`,
         { userId: user._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -78,7 +78,7 @@ const Profile = () => {
   const renderImage = (path) => {
     if (!path) return "/assets/default-profile.png";
     if (path.startsWith("http")) return path;
-    return `${BACKEND_URL}/uploads/${path}`;
+    return `${base_url}/uploads/${path}`;
   };
 
   if (loading) return <div>Loading profile...</div>;

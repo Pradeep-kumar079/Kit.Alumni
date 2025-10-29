@@ -4,9 +4,10 @@ import axios from "axios";
 import "./Navbar.css";
 import { FaGraduationCap, FaSignOutAlt, FaUser } from "react-icons/fa";
 import { FaMagnifyingGlass } from "react-icons/fa6";
-import { BACKEND_URL } from "../config";
+ 
 
 const Navbar = () => {
+  const BACKEND_URL = "https://kit-alumni.onrender.com";
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
